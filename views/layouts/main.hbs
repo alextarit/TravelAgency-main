@@ -1,0 +1,198 @@
+<!-- Citation for the following code (the entirety of this file):
+Title: Node.js Starter App
+Type: Full program
+Date: 05/25/2023
+Copied and then modified to fit our database structure:
+Source URL: https://github.com/osu-cs340-ecampus/nodejs-starter-app
+-->
+
+<!-- main.hbs-->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marine Travel </title>
+  <link rel="stylesheet" href="assets/css/swiper-bundle.min.css">
+  <!-- Подключение Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+  <!-- <link rel="stylesheet" href="../../main/assets/css/styles.css" />  -->
+  <link rel="shortcut icon" href="../../main/assets/img/icon.png" type="image/png" />
+
+  <!-- Стили искл/чительно для модуля БД -->
+   <link rel="stylesheet" href="./stylesheets/style.css" />
+</head>
+
+<body>
+
+
+  <header class="header" id="header">
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #14505c">
+      <div class="container">
+
+        <!-- Кнопка для открытия модального окна -->
+        <a href="#" class="navbar-brand" data-bs-toggle="modal" data-bs-target="#exampleModal">Marine Travel</a>
+
+        <!-- Модальное окно с backdrop -->
+        <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true"
+          data-bs-backdrop="static">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">А ты у нас тут любознательный</h5>
+              </div>
+              <div class="modal-body">
+                <p>Поздравляю, ты нашел ачивку. <br><em><strong>Цикада 3301 скоро свяжется с
+                      тобой</strong></em></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+          aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+              <a href="index.html#home" class="nav-link active">Домашняя</a>
+            </li>
+            <li class="nav-item">
+              <a href="index.html#about" class="nav-link">О нас</a>
+            </li>
+            <li class="nav-item">
+              <a href="index.html#discover" class="nav-link">Путешествия</a>
+            </li>
+            <li class="nav-item">
+              <a href="index.html#place" class="nav-link">Места</a>
+            </li>
+            <li class="nav-item">
+              <a href="#" class="nav-link">Работникам</a>
+            </li>
+            <li class="nav-item">
+              <a href="child.html" class="nav-link">Детям</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+
+
+{{!-- непосредственный код для шаблонизатора --}}
+
+
+
+
+
+  <main class="main">
+    <nav>
+      <a href="/customers">Клиенты</a>
+      <a href="/agents">Агенты</a>
+      <a href="/locations">Локации</a>
+      <a href="/reservations">Резервации</a>
+    </nav>
+
+    {{{body}}}
+  </main>
+
+
+
+
+
+
+
+
+
+  <!--==================== FOOTER ====================-->
+  <footer class="footer" id="footer">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-3 col-6">
+          <h3 class="footer__title">Путешествия</h3>
+          <p class="footer__description">Выбирая путешествие <br> вы определяете личный <br> опыт.
+          </p>
+          <div>
+            <a href="https://www.facebook.com/" target="_blank" class="footer__social">
+              <i class="ri-facebook-box-fill"></i>
+            </a>
+            <a href="https://twitter.com/" target="_blank" class="footer__social">
+              <i class="ri-twitter-fill"></i>
+            </a>
+            <a href="https://www.instagram.com/" target="_blank" class="footer__social">
+              <i class="ri-instagram-fill"></i>
+            </a>
+            <a href="https://www.youtube.com/" target="_blank" class="footer__social">
+              <i class="ri-youtube-fill"></i>
+            </a>
+          </div>
+        </div>
+        <div class="col-lg-3 col-6">
+          <h3 class="footer__subtitle">О нас</h3>
+          <ul>
+            <li class="footer__item">
+              <a href="" class="footer__link">История</a>
+            </li>
+            <li class="footer__item">
+              <a href="" class="footer__link">Возможности</a>
+            </li>
+            <li class="footer__item">
+              <a href="" class="footer__link">Новости и блог</a>
+            </li>
+          </ul>
+        </div>
+        <div class="col-lg-3 col-6">
+          <h3 class="footer__subtitle">Компания</h3>
+          <ul>
+            <li class="footer__item">
+              <a href="" class="footer__link">Команда</a>
+            </li>
+            <li class="footer__item">
+              <a href="" class="footer__link">План развития</a>
+            </li>
+            <li class="footer__item">
+              <a href="" class="footer__link">Стать участнником</a>
+            </li>
+          </ul>
+        </div>
+        <div class="col-lg-3 col-6">
+          <h3 class="footer__subtitle">Поддержка</h3>
+          <ul>
+            <li class="footer__item">
+              <a href="" class="footer__link">Часто задаваемые вопросы</a>
+            </li>
+            <li class="footer__item">
+              <a href="" class="footer__link">Центр поддержки</a>
+            </li>
+            <li class="footer__item">
+              <a href="" class="footer__link">Контактная информация</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col">
+          <div class="footer__rights">
+            <p class="footer__copy">&#169; 2023 ОбнинскCity. Все права защищены и принадлежат ИАТЭ.</p>
+            <div class="footer__terms">
+              <a href="#" class="footer__terms-link">Согласие</a>
+              <a href="#" class="footer__terms-link">Приватная информация</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Подключение Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+
+</html>

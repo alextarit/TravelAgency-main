@@ -1,0 +1,608 @@
+// App.js
+
+// Citation for the following code (the entirety of this file):
+// Title: Node.js Starter App
+// Type: Full program
+// Date: 05/25/2023
+// Copied and then modified to fit our database structure:
+// Source URL: https://github.com/osu-cs340-ecampus/nodejs-starter-app
+
+/*
+    SETUP
+*/
+var express = require('express');   // We are using the express library for the web server
+var app     = express();            // We need to instantiate an express object to interact with the server in our code
+PORT        = 8008;                 // Set a port number at the top so it's easy to change in the future
+
+
+// -------------------------------------Блок с кодом для аутентификации----------------------------------------- 
+
+const session = require('express-session');
+app.use(express.urlencoded({extended: false}));
+ 
+// Настройка сессий
+app.use(session({
+    secret: 'tar12345', // наш секретный ключ
+    resave: false,
+    saveUninitialized: true
+}));
+
+// Маршрут для отображения страницы входа
+app.get('/login', (req, res) => {
+    res.render('login'); // Рендерим страницу login.hbs
+});
+
+// Обработка отправки формы аутентификации
+app.post('/login', (req, res) => {
+    const username = req.body.username;
+    const password = req.body.password;
+
+    // Проверка логина и пароля пользователя. Здесь вы можете использовать ваш существующий код
+    if (username === 'admin' && password === '12345') {
+        // Успешная аутентификация
+        req.session.authenticated = true;
+        res.redirect('/agents'); // Перенаправьте пользователя на главную страницу после входа
+    } else {
+        // Неудачная аутентификация
+        res.send('Неверный логин или пароль');
+    }
+});
+
+//Форма аутентификации
+
+
+app.use(express.static(__dirname + '/main'));
+// app.js
+const { engine } = require('express-handlebars');
+app.engine('.hbs', engine({extname: ".hbs"}));  // Create an instance of the handlebars engine to process templates
+app.set('view engine', '.hbs');                 // Tell express to use the handlebars engine whenever it encounters a *.hbs file.
+
+// Database
+var db = require('./database/db-connector')
+
+// app.js - SETUP section
+app.use(express.json())
+app.use(express.urlencoded({extended: true}))
+app.use(express.static(__dirname + '/public'));         // this is needed to allow for the form to use the css style sheet/javascript
+    
+
+// app.js
+
+app.get('/', function(req, res)
+{
+    return res.render('agents');
+});
+
+//////////////////////
+// GET ROUTES: READ/SELECT
+//////////////////////
+
+app.get('/locations', function(req, res)
+{
+    if (!req.session.authenticated) {
+        // Если пользователь не аутентифицирован, перенаправляем его на страницу входа
+        res.redirect('/login');
+    } else {
+    // Declare Query
+    let query = "SELECT locationId, cityName, stateOrProvince, countryName FROM Locations ORDER BY locationId ASC;";
+
+    // Run query
+    db.pool.query(query, function(error, rows, fields){
+        // Save the records
+        let locations = rows; 
+
+        return res.render('locations', {locationData: locations});
+    })
+}
+});
+
+app.get('/agents', function(req, res)
+{
+    if (!req.session.authenticated) {
+        // Если пользователь не аутентифицирован, перенаправляем его на страницу входа
+        res.redirect('/login');
+    } else {
+    // Declare Query 1
+    let query1 = "SELECT agentId, firstName, lastName, email, phoneNumber, CONCAT(cityName,', ', IF(stateOrProvince IS NOT NULL, CONCAT(stateOrProvince, ', '), ''), countryName) AS `location` FROM Agents LEFT JOIN Locations ON Agents.locationId = Locations.locationId ORDER BY agentId ASC;";
+
+    // Declare Query 2
+    let query2 = "SELECT locationId, CONCAT(cityName,', ', IF(stateOrProvince IS NOT NULL, CONCAT(stateOrProvince, ', '), ''), countryName) AS `location` FROM Locations ORDER BY locationId ASC;";
+
+    // Declare Query 3.
+    let query3 = "SELECT agentId, CONCAT(Agents.firstName, ' ', Agents.lastName) AS `agent` FROM Agents ORDER BY agentId ASC;";
+
+    // Run the 1st query
+    db.pool.query(query1, function(error, rows, fields){
+        // Save the records
+        let agents = rows; 
+
+        // Run the second query.
+        db.pool.query(query2, function(error, rows, fields){
+            // Save the records
+            let locations = rows; 
+
+            // Run the third query.
+            db.pool.query(query3, function(error, rows, fields){
+
+            // Save the records
+            let agentDropdown = rows; 
+
+            return res.render('agents', {agentData: agents, locationData: locations, agentDropdown: agentDropdown});
+            })
+        })
+    })
+}
+});
+
+app.get('/customers', function (req, res) {
+    if (!req.session.authenticated) {
+        // Если пользователь не аутентифицирован, перенаправляем его на страницу входа
+        res.redirect('/login');
+    } else {
+    // Declare Query 1
+    let query1 = "SELECT * FROM Customers ORDER BY customerId ASC;";
+
+    // Declare Query 2 so that we can use it in the dropdown menu in Customers form when updating a customer instead of customerId
+    let query2 = "SELECT customerId, CONCAT(Customers.firstName, ' ', Customers.lastName) AS `customer` FROM Customers ORDER BY customerId ASC;";
+
+    // Run the 1st query
+    db.pool.query(query1, function (error, rows, fields) {
+        // Save the records
+        let customers = rows;
+
+        // Run the second query.
+        db.pool.query(query2, function (error, rows, fields) {
+
+        // Save the records which will be used in the dropdown menu see line 117 in customers.hbs
+        let customerDropdown = rows;
+
+        return res.render('customers', { customerData: customers, customerDropdown: customerDropdown });
+        })
+    })
+}
+});
+
+app.get('/reservations', function (req, res) {
+    if (!req.session.authenticated) {
+        // Если пользователь не аутентифицирован, перенаправляем его на страницу входа
+        res.redirect('/login');
+    } else {
+    // Declare Query1
+    let query = "SELECT reservationId, CONCAT(Agents.firstName, ' ', Agents.lastName) AS agent, date_format(startDate,'%Y-%m-%d') AS startDate, date_format(endDate, '%Y-%m-%d') AS endDate FROM Reservations LEFT JOIN Agents ON Reservations.agentId = Agents.agentId ORDER BY reservationId ASC;";
+
+    // Declare Query 2
+    let query2 = "SELECT agentId, CONCAT(Agents.firstName, ' ', Agents.lastName) AS `agent` FROM Agents ORDER BY agentId ASC;";
+
+    // Run 1st query
+    db.pool.query(query, function (error, rows, fields) {
+        // Save the records
+        let reservations = rows;
+
+        // Run the second query.
+        db.pool.query(query2, function (error, rows, fields) {
+
+        // Save the records
+        let agents = rows;
+
+        return res.render('reservations', 
+        { reservationData: reservations,
+        agentData: agents });
+         });
+    })
+}
+});
+
+
+//////////////////////
+// POST ROUTES: ADD/INSERT
+//////////////////////
+
+app.post('/add-location', function(req, res) 
+{
+    if (!req.session.authenticated) {
+        // Если пользователь не аутентифицирован, перенаправляем его на страницу входа
+        res.redirect('/login');
+    } else {
+    // Capture the incoming data and parse it back to a JS object
+    let data = req.body;
+
+    // Capture NULL values + Handle additional single quotes.
+    let stateOrProvince = data.stateOrProvince;
+    if (stateOrProvince == '')
+        stateOrProvince = 'NULL';
+    else
+        stateOrProvince = `'${data.stateOrProvince}'`;
+
+    // Create the query and run it on the database
+    query1 = `INSERT INTO Locations (cityName, stateOrProvince, countryName)
+    VALUES ('${data.cityName}', ${stateOrProvince}, '${data.countryName}');`;
+
+    db.pool.query(query1, function(error, rows, fields){
+
+        // Check to see if there was an error
+        if (error) {
+
+            // Log the error to the terminal so we know what went wrong, and send the visitor an HTTP response 400 indicating it was a bad request.
+            console.log(error)
+            res.sendStatus(400);
+        }
+        else
+        {
+            // If there was no error, get all records.
+            query2 = "SELECT locationId, cityName, stateOrProvince, countryName FROM Locations ORDER BY locationId ASC;";
+
+            db.pool.query(query2, function(error, rows, fields){
+
+                // If there was an error on the second query, send a 400
+                if (error) {
+                    
+                    // Log the error to the terminal so we know what went wrong, and send the visitor an HTTP response 400 indicating it was a bad request.
+                    console.log(error);
+                    res.sendStatus(400);
+                }
+                // If all went well, send the results of the query back.
+                else
+                {
+                    res.send(rows);
+                }
+            })
+        }
+    })
+}
+});
+
+app.post('/add-agent', function(req, res) 
+{
+    if (!req.session.authenticated) {
+        // Если пользователь не аутентифицирован, перенаправляем его на страницу входа
+        res.redirect('/login');
+    } else {
+    // Capture the incoming data and parse it back to a JS object
+    let data = req.body;
+
+    // Capture NULL values + Handle additional single quotes.
+    let locationId = data.locationId;
+    if (locationId == 0)
+    {
+        locationId = 'NULL';
+    }
+
+    // Create the query and run it on the database
+    query1 = `INSERT INTO Agents (firstName, lastName, email, phoneNumber, locationId) VALUES ('${data.firstName}', '${data.lastName}', '${data.email}', '${data.phoneNumber}', ${locationId})`;
+
+    db.pool.query(query1, function(error, rows, fields){
+
+        // Check to see if there was an error
+        if (error) {
+
+            // Log the error to the terminal so we know what went wrong, and send the visitor an HTTP response 400 indicating it was a bad request.
+            console.log(error)
+            res.sendStatus(400);
+        }
+        else
+        {
+            // If there was no error, get all records.
+            query2 = "SELECT agentId, firstName, lastName, email, phoneNumber, CONCAT(cityName,', ', IF(stateOrProvince IS NOT NULL, CONCAT(stateOrProvince, ', '), ''), countryName) AS `location` FROM Agents LEFT JOIN Locations ON Agents.locationId = Locations.locationId ORDER BY agentId ASC;";
+
+            db.pool.query(query2, function(error, rows, fields){
+
+                // If there was an error on the second query, send a 400
+                if (error) {
+                    
+                    // Log the error to the terminal so we know what went wrong, and send the visitor an HTTP response 400 indicating it was a bad request.
+                    console.log(error);
+                    res.sendStatus(400);
+                }
+                // If all went well, send the results of the query back.
+                else
+                {
+                    res.send(rows);
+                }
+            })
+        }
+    })
+}
+});
+
+app.post('/add-customer', function (req, res) {
+    if (!req.session.authenticated) {
+        // Если пользователь не аутентифицирован, перенаправляем его на страницу входа
+        res.redirect('/login');
+    } else {
+    // Capture the incoming data and parse it back to a JS object
+    let data = req.body;
+
+    // Create the query and run it on the database
+    query1 = `INSERT INTO Customers (firstName, lastName, email, phoneNumber, address) VALUES ('${data.firstName}', '${data.lastName}', '${data.email}', '${data.phoneNumber}', '${data.address}')`;
+
+    db.pool.query(query1, function (error, rows, fields) {
+
+        // Check to see if there was an error
+        if (error) {
+
+            // Log the error to the terminal so we know what went wrong, and send the visitor an HTTP response 400 indicating it was a bad request.
+            console.log(error)
+            res.sendStatus(400);
+        }
+        else {
+            // If there was no error, get all records.
+            query2 = "SELECT customerId, firstName, lastName, email, phoneNumber, address FROM Customers ORDER BY customerId ASC; ";
+
+            db.pool.query(query2, function (error, rows, fields) {
+
+                // If there was an error on the second query, send a 400
+                if (error) {
+
+                    // Log the error to the terminal so we know what went wrong, and send the visitor an HTTP response 400 indicating it was a bad request.
+                    console.log(error);
+                    res.sendStatus(400);
+                }
+                // If all went well, send the results of the query back.
+                else {
+                    res.send(rows);
+                }
+            })
+        }
+    })
+}
+});
+
+app.post('/add-reservation', function (req, res) {
+    if (!req.session.authenticated) {
+        // Если пользователь не аутентифицирован, перенаправляем его на страницу входа
+        res.redirect('/login');
+    } else {
+    // Capture the incoming data and parse it back to a JS object
+    let data = req.body;
+
+    // Capture NULL values + Handle additional single quotes.
+    let agentId = data.agentId;
+    if (agentId == 0)
+    {
+        agentId = 'NULL';
+    }
+
+    // Create the query and run it on the database
+    // date variables are listed directly without prefix ".data" so treated as a string w/ single quotes ie: "'yyyy-mm-dd'"
+    
+    query1 = `INSERT INTO Reservations (agentId, startDate, endDate) VALUES (${agentId}, '${data.startDate}', '${data.endDate}');`;
+
+    db.pool.query(query1, function (error, rows, fields) {
+
+        // Check to see if there was an error
+        if (error) {
+
+            // Log the error to the terminal so we know what went wrong, and send the visitor an HTTP response 400 indicating it was a bad request.
+            console.log(error)
+            res.sendStatus(400);
+        }
+        else {
+            // If there was no error, get all records.
+            query2 = `SELECT reservationId, CONCAT(Agents.firstName, ' ', Agents.lastName) AS agent, date_format(startDate,'%Y-%m-%d') AS startDate, date_format(endDate, '%Y-%m-%d') AS endDate FROM Reservations LEFT JOIN Agents ON Reservations.agentId = Agents.agentId ORDER BY reservationId ASC;`;
+            
+            db.pool.query(query2, function (error, rows, fields) {
+
+            //     // If there was an error on the second query, send a 400
+                if (error) {
+
+                    // Log the error to the terminal so we know what went wrong, and send the visitor an HTTP response 400 indicating it was a bad request.
+                    console.log(error);
+                    res.sendStatus(400);
+                }
+                // If all went well, send the results of the query back.
+                else {
+                    res.send(rows);
+                }
+            })
+        }
+    })
+}
+});
+
+
+//////////////////////
+// DELETE ROUTES
+//////////////////////
+
+app.delete('/delete-customer/', function (req, res, next) {
+    if (!req.session.authenticated) {
+        // Если пользователь не аутентифицирован, перенаправляем его на страницу входа
+        res.redirect('/login');
+    } else {
+    let data = req.body;
+    let customerId = parseInt(data.customerId);
+    let query = `DELETE FROM Customers WHERE customerId = ?`;
+
+    // Run the 1st query
+    db.pool.query(query, [customerId], function (error, rows, fields) {
+        if (error) {
+
+            // Log the error to the terminal so we know what went wrong, and send the visitor an HTTP response 400 indicating it was a bad request.
+            console.log(error);
+            res.sendStatus(400);
+        }
+
+        else {
+            res.sendStatus(204);
+        }
+    })
+}
+});
+
+app.delete('/delete-agent/', function (req, res, next) {
+    if (!req.session.authenticated) {
+        // Если пользователь не аутентифицирован, перенаправляем его на страницу входа
+        res.redirect('/login');
+    } else {
+    let data = req.body;
+    let agentId = parseInt(data.agentId);
+    let query = `DELETE FROM Agents WHERE agentId = ?`;
+
+    // Run the 1st query
+    db.pool.query(query, [agentId], function (error, rows, fields) {
+        if (error) {
+
+            // Log the error to the terminal so we know what went wrong, and send the visitor an HTTP response 400 indicating it was a bad request.
+            console.log(error);
+            res.sendStatus(400);
+        }
+
+        else {
+            res.sendStatus(204);
+        }
+    })
+}
+});
+
+app.delete('/delete-location/', function (req, res, next) {
+    if (!req.session.authenticated) {
+        // Если пользователь не аутентифицирован, перенаправляем его на страницу входа
+        res.redirect('/login');
+    } else {
+    let data = req.body;
+    let locationId = parseInt(data.locationId);
+    let query = `DELETE FROM Locations WHERE locationId = ?`;
+
+    // Run the 1st query
+    db.pool.query(query, [locationId], function (error, rows, fields) {
+        if (error) {
+
+            // Log the error to the terminal so we know what went wrong, and send the visitor an HTTP response 400 indicating it was a bad request.
+            console.log(error);
+            res.sendStatus(400);
+        }
+
+        else {
+            res.sendStatus(204);
+        }
+    })
+}
+});
+
+app.delete('/delete-reservation/', function (req, res, next) {
+    if (!req.session.authenticated) {
+        // Если пользователь не аутентифицирован, перенаправляем его на страницу входа
+        res.redirect('/login');
+    } else {
+    let data = req.body;
+    let reservationId = parseInt(data.reservationId);
+    let query = `DELETE FROM Reservations WHERE reservationId = ?;`;
+
+    // Run the 1st query
+    db.pool.query(query, [reservationId], function (error, rows, fields) {
+        if (error) {
+
+            // Log the error to the terminal so we know what went wrong, and send the visitor an HTTP response 400 indicating it was a bad request.
+            console.log(error);
+            res.sendStatus(400);
+        }
+
+        else {
+            res.sendStatus(204);
+        }
+    })
+}
+});
+
+//////////////////////
+// UPDATE ROUTES : EDIT/UPDATE
+//////////////////////
+
+app.put('/put-customer', function (req, res, next) {
+    if (!req.session.authenticated) {
+        // Если пользователь не аутентифицирован, перенаправляем его на страницу входа
+        res.redirect('/login');
+    } else {
+    let data = req.body;
+
+    let customerId = parseInt(data.customerId);
+
+    queryUpdate = `UPDATE Customers SET firstName = ?, lastName = ?, email = ?, phoneNumber = ?, address = ? WHERE customerId = ?;`;
+
+    // since not referring to another table, no need to refer to Table.columnName ie as below
+    querySelect = `SELECT customerId, firstName, lastName, email, phoneNumber, address FROM Customers WHERE customerId = ?;`;
+
+    // Run the 1st query with passing additional parameters in [] in same order as in queryUpdate but PK at the end
+    db.pool.query(queryUpdate, [data.firstName, data.lastName, data.email, data.phoneNumber, data.address, data.customerId], function (error, rows, fields) {
+
+        if (error) {
+
+            // Log the error to the terminal so we know what went wrong, and send the visitor an HTTP response 400 indicating it was a bad request.
+            console.log(error);
+            res.sendStatus(400);
+        }
+
+        // If there was no error, we run our second query and return that data so we can use it to update the record.
+        // table on the front-end
+        else {
+            // Run the second query
+            db.pool.query(querySelect, [customerId], function (error, rows, fields) {
+
+                if (error) {
+                    console.log(error);
+                    res.sendStatus(400);
+                } else {
+                    res.send(rows);
+                }
+            })
+        }
+    })
+}
+});
+
+app.put('/put-agent', function(req,res,next){
+    if (!req.session.authenticated) {
+        // Если пользователь не аутентифицирован, перенаправляем его на страницу входа
+        res.redirect('/login');
+    } else {                                   
+    let data = req.body;
+  
+    let agentId = parseInt(data.agentId);
+
+    // Capture NULL values + Handle additional single quotes.
+    let locationId = data.locationId;
+    if (locationId == 0)
+        locationId = 'NULL';
+  
+    queryUpdate = `UPDATE Agents SET firstName = ?, lastName = ?, email = ?, phoneNumber = ?, locationId = ${locationId} WHERE agentId = ?;`;
+  
+    querySelect = "SELECT agentId, firstName, lastName, email, phoneNumber, CONCAT(cityName,', ', IF(stateOrProvince IS NOT NULL, CONCAT(stateOrProvince, ', '), ''), countryName) AS `location` FROM Agents LEFT JOIN Locations ON Agents.locationId = Locations.locationId WHERE agentId = ?;";
+  
+          // Run the 1st query
+          db.pool.query(queryUpdate, [data.firstName, data.lastName, data.email, data. phoneNumber, agentId], function(error, rows, fields){
+              if (error) {
+  
+              // Log the error to the terminal so we know what went wrong, and send the visitor an HTTP response 400 indicating it was a bad request.
+              console.log(error);
+              res.sendStatus(400);
+              }
+  
+              // If there was no error, we run our second query and return that data so we can use it to update the record.
+              // table on the front-end
+              else
+              {
+                  // Run the second query
+                  db.pool.query(querySelect, [agentId], function(error, rows, fields) {
+          
+                      if (error) {
+                          console.log(error);
+                          res.sendStatus(400);
+                      } else {
+                          res.send(rows);
+                      }
+                  })
+              }
+  })}});
+
+//////////////////////
+/*
+    LISTENER
+*/
+app.listen(PORT, function(){            // This is the basic syntax for what is called the 'listener' which receives incoming requests on the specified PORT.
+    console.log('PROD SERVER: started on http://localhost:' + PORT + '; press Ctrl-C to terminate.')
+});
+
+
+
+
+

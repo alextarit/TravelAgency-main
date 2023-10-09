@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marine Travel </title>
+    <link rel="stylesheet" href="assets/css/swiper-bundle.min.css">
+    <!-- Подключение Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/styles.css" />
+    <link rel="shortcut icon" href="assets/img/icon.png" type="image/png" />
+</head>
+
+<body>
+
+
+    <header class="header" id="header">
+        <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #14505c">
+            <div class="container">
+
+                <!-- Кнопка для открытия модального окна -->
+                <a href="#" class="navbar-brand" data-bs-toggle="modal" data-bs-target="#exampleModal">Marine Travel</a>
+
+                <!-- Модальное окно с backdrop -->
+                <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel"
+                    aria-hidden="true" data-bs-backdrop="static">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="exampleModalLabel">А ты у нас тут любознательный</h5>
+                            </div>
+                            <div class="modal-body">
+                                <p>Поздравляю, ты нашел ачивку. <br><em><strong>Цикада 3301 скоро свяжется с
+                                            тобой</strong></em></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a href="index.html#home" class="nav-link active">Домашняя</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="index.html#about" class="nav-link">О нас</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="index.html#discover" class="nav-link">Путешествия</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="index.html#place" class="nav-link">Места</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/login" class="nav-link">Работникам</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">Детям</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+
+
+    <main class="main">
+        <div class="container canvas-container">
+            <canvas id="myCanvas" width="800" height="600"></canvas>
+        </div>        
+    </main>
+
+    <!-- Подключение Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Подключение Chart JS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script src="assets/js/child.js"></script>
+
+
+</body>
+
+</html>
