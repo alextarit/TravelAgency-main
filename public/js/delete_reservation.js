@@ -9,7 +9,7 @@
 function deleteReservation(reservationId) {
     // Show a confirm dialog box before actually trying to delete.
     // Then, cancel if needed.
-    if (!confirm(`Are you sure you would like to delete the record with ID: ${reservationId}?`))
+    if (!confirm(`Вы уверены что хотите удалить резервацию с ID: ${reservationId}?`))
         return;
 
     // Put our data we want to send in a javascript object

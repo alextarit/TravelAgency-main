@@ -9,7 +9,7 @@
 function deleteCustomer(customerId) {
     // Show a confirm dialog box before actually trying to delete.
     // Then, cancel if needed.
-    if (!confirm(`Are you sure you would like to delete the record with ID: ${customerId}?`))
+    if (!confirm(`Вы уверены что хотите удалить клиента с ID: ${customerId}?`))
         return;
 
     // Put our data we want to send in a javascript object
