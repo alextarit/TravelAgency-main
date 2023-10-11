@@ -99,7 +99,7 @@ addRowToTable = (data) => {
 
     // Define the actual delete button element.
     deleteCellInner = document.createElement("button");
-    deleteCellInner.innerHTML = "Delete";
+    deleteCellInner.innerHTML = "Удалить";
     deleteCellInner.onclick = function () {
         deleteAgent(newRow.agentId);
     };
