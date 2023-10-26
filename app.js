@@ -76,6 +76,44 @@ app.get('/', function(req, res)
 //////////////////////
 // GET ROUTES: READ/SELECT
 //////////////////////
+app.get('/customerReservation', function(req, res)
+{
+    if (!req.session.authenticated) {
+        // Если пользователь не аутентифицирован, перенаправляем его на страницу входа
+        res.redirect('/login');
+    } else {
+    // Declare Query 1
+    let query1 = "SELECT customerReservationId,   CONCAT(Customers.firstName, ' ', Customers.lastName) AS customer, reservationId FROM CustomerReservation JOIN Customers ON CustomerReservation.customerId = Customers.customerId ORDER BY customerReservationId ASC;";
+
+    // Declare Query 2
+    let query2 = "SELECT reservationId, CONCAT(Agents.firstName, ' ', Agents.lastName) AS agent, date_format(startDate,'%Y-%m-%d') AS startDate, date_format(endDate, '%Y-%m-%d') AS endDate FROM Reservations LEFT JOIN Agents ON Reservations.agentId = Agents.agentId ORDER BY reservationId ASC;";
+
+    // Declare Query 3
+    let query3 = "SELECT customerId, CONCAT(Customers.firstName, ' ', Customers.lastName) AS `customer` FROM Customers ORDER BY customerId ASC;";
+
+    // Run the 1st query
+    db.pool.query(query1, function(error, rows, fields){
+        // Save the records
+        let customerReservations = rows; 
+
+        // Run the second query.
+        db.pool.query(query2, function(error, rows, fields){
+
+            // Save the records
+            let reservations = rows; 
+
+            // Run the third query.
+            db.pool.query(query3, function(error, rows, fields){
+        
+            // Save the records
+            let customers = rows; 
+    
+            return res.render('customerReservation', {customerReservationData: customerReservations, reservationData: reservations, customerData: customers});
+            })
+        })
+    })
+}
+});
 
 app.get('/locations', function(req, res)
 {
@@ -192,10 +230,109 @@ app.get('/reservations', function (req, res) {
 }
 });
 
+app.get('/reservationLocation', function (req, res) {
+    if (!req.session.authenticated) {
+        // Если пользователь не аутентифицирован, перенаправляем его на страницу входа
+        res.redirect('/login');
+    } else {
+    // Declare Query 1 location dropdown
+    let query1 = "SELECT reservationLocationId, CONCAT(cityName,', ', IF(stateOrProvince IS NOT NULL, CONCAT(stateOrProvince, ', '), ''), countryName) AS `location`, ReservationLocation.reservationId FROM ReservationLocation INNER JOIN Locations ON ReservationLocation.locationId = Locations.locationId INNER JOIN Reservations ON Reservations.reservationId = ReservationLocation.reservationId ORDER BY reservationLocationId ASC; ";
+
+    // Declare Query 2 
+    let query2 = "SELECT reservationId, CONCAT(Agents.firstName, ' ', Agents.lastName) AS agent, date_format(startDate,'%Y-%m-%d') AS startDate, date_format(endDate, '%Y-%m-%d') AS endDate FROM Reservations LEFT JOIN Agents ON Reservations.agentId = Agents.agentId ORDER BY reservationId ASC;";
+
+    // Declare Query 3 reservation dropdown
+    let query3 = "SELECT reservationId FROM Reservations ORDER BY reservationId ASC; ";
+
+    // Declare Query 4 loction dropdown
+    let query4 = "SELECT locationId, CONCAT(cityName,', ', IF(stateOrProvince IS NOT NULL, CONCAT(stateOrProvince, ', '), ''), countryName) AS `location`FROM Locations ORDER BY locationId ASC;";
+
+    // Run the 1st query
+    db.pool.query(query1, function (error, rows, fields) {
+        // Save the records
+        let reservationLocations = rows;
+
+        // Run the second query.
+        db.pool.query(query2, function (error, rows, fields) {
+
+            // Save the records
+            let reservations = rows;
+
+            // Run the third query.
+            db.pool.query(query3, function (error, rows, fields) {
+
+                // Save the records
+                let reservationDropdown = rows;
+
+                // Run the fourth query.
+                db.pool.query(query4, function (error, rows, fields) {
+
+                    // Save the records
+                    let locationsDropdown = rows;
+
+                    return res.render('reservationLocation', { 
+                        reservationLocationData: reservationLocations, 
+                        reservationData: reservations,
+                        reservationDropdownData: reservationDropdown,
+                        locationDropdownData: locationsDropdown
+                     });
+                })
+
+            })
+        })
+    })
+}
+});
+
 
 //////////////////////
 // POST ROUTES: ADD/INSERT
 //////////////////////
+app.post('/add-customerReservation', function(req, res) 
+{
+    if (!req.session.authenticated) {
+        // Если пользователь не аутентифицирован, перенаправляем его на страницу входа
+        res.redirect('/login');
+    } else {
+    // Capture the incoming data and parse it back to a JS object
+    let data = req.body;
+
+    // Create the query and run it on the database
+    query1 = `INSERT INTO CustomerReservation (customerId, reservationId) VALUES (${data.customerId}, ${data.reservationId});`;
+
+    db.pool.query(query1, function(error, rows, fields){
+
+        // Check to see if there was an error
+        if (error) {
+
+            // Log the error to the terminal so we know what went wrong, and send the visitor an HTTP response 400 indicating it was a bad request.
+            console.log(error)
+            res.sendStatus(400);
+        }
+        else
+        {
+            // If there was no error, get all records.
+            query2 = `SELECT customerReservationId,   CONCAT(Customers.firstName, ' ', Customers.lastName) AS customer, reservationId FROM CustomerReservation JOIN Customers ON CustomerReservation.customerId = Customers.customerId ORDER BY customerReservationId ASC;`;
+
+            db.pool.query(query2, function(error, rows, fields){
+
+                // If there was an error on the second query, send a 400
+                if (error) {
+                    
+                    // Log the error to the terminal so we know what went wrong, and send the visitor an HTTP response 400 indicating it was a bad request.
+                    console.log(error);
+                    res.sendStatus(400);
+                }
+                // If all went well, send the results of the query back.
+                else
+                {
+                    res.send(rows);
+                }
+            })
+        }
+    })
+}
+});
 
 app.post('/add-location', function(req, res) 
 {
@@ -399,10 +536,78 @@ app.post('/add-reservation', function (req, res) {
 }
 });
 
+app.post('/add-reservationLocation', function (req, res) {
+    if (!req.session.authenticated) {
+        // Если пользователь не аутентифицирован, перенаправляем его на страницу входа
+        res.redirect('/login');
+    } else {
+    // Capture the incoming data and parse it back to a JS object
+    let data = req.body;
+
+    // Create the query and run it on the database
+    query1 = `INSERT INTO ReservationLocation (locationId, reservationId) VALUES (${data.locationId}, ${data.reservationId});`;
+
+    db.pool.query(query1, function (error, rows, fields) {
+
+        // Check to see if there was an error
+        if (error) {
+
+            // Log the error to the terminal so we know what went wrong, and send the visitor an HTTP response 400 indicating it was a bad request.
+            console.log(error)
+            res.sendStatus(400);
+        }
+        else {
+            // If there was no error, get all records.
+            query2 = "SELECT reservationLocationId, CONCAT(cityName,', ', IF(stateOrProvince IS NOT NULL, CONCAT(stateOrProvince, ', '), ''), countryName) AS `location`, ReservationLocation.reservationId FROM ReservationLocation INNER JOIN Locations ON ReservationLocation.locationId = Locations.locationId INNER JOIN Reservations ON Reservations.reservationId = ReservationLocation.reservationId ORDER BY reservationLocationId ASC;";
+
+            db.pool.query(query2, function (error, rows, fields) {
+
+                // If there was an error on the second query, send a 400
+                if (error) {
+
+                    // Log the error to the terminal so we know what went wrong, and send the visitor an HTTP response 400 indicating it was a bad request.
+                    console.log(error);
+                    res.sendStatus(400);
+                }
+                // If all went well, send the results of the query back.
+                else {
+                    res.send(rows);
+                }
+            })
+        }
+    })
+}
+});
+
 
 //////////////////////
 // DELETE ROUTES
 //////////////////////
+app.delete('/delete-customerReservation/', function(req,res,next){
+    if (!req.session.authenticated) {
+        // Если пользователь не аутентифицирован, перенаправляем его на страницу входа
+        res.redirect('/login');
+    } else {
+    let data = req.body;
+    let customerReservationId = parseInt(data.id);
+    let query = `DELETE FROM CustomerReservation WHERE customerReservationId = ?`;
+  
+          // Run the 1st query
+          db.pool.query(query, [customerReservationId], function(error, rows, fields){
+              if (error) {
+  
+              // Log the error to the terminal so we know what went wrong, and send the visitor an HTTP response 400 indicating it was a bad request.
+              console.log(error);
+              res.sendStatus(400);
+              }
+  
+              else
+              {
+                  res.sendStatus(204);
+              }
+  })
+}
+});
 
 app.delete('/delete-customer/', function (req, res, next) {
     if (!req.session.authenticated) {
@@ -504,9 +709,76 @@ app.delete('/delete-reservation/', function (req, res, next) {
 }
 });
 
+app.delete('/delete-reservationLocation/', function (req, res, next) {
+    if (!req.session.authenticated) {
+        // Если пользователь не аутентифицирован, перенаправляем его на страницу входа
+        res.redirect('/login');
+    } else {
+    let data = req.body;
+    let reservationLocationId = parseInt(data.reservationLocationId);
+    let query = `DELETE FROM ReservationLocation WHERE reservationLocationId = ?`;
+
+    // Run the 1st query
+    db.pool.query(query, [reservationLocationId], function (error, rows, fields) {
+        if (error) {
+
+            // Log the error to the terminal so we know what went wrong, and send the visitor an HTTP response 400 indicating it was a bad request.
+            console.log(error);
+            res.sendStatus(400);
+        }
+
+        else {
+            res.sendStatus(204);
+        }
+    })
+}
+});
+
 //////////////////////
 // UPDATE ROUTES : EDIT/UPDATE
 //////////////////////
+app.put('/put-customerReservation', function(req,res,next){ 
+    if (!req.session.authenticated) {
+        // Если пользователь не аутентифицирован, перенаправляем его на страницу входа
+        res.redirect('/login');
+    } else {                                  
+    let data = req.body;
+  
+    let id = parseInt(data.id);
+    let customerId = parseInt(data.customerId);
+    let reservationId = parseInt(data.reservationId);
+  
+    queryUpdate = `UPDATE CustomerReservation SET customerId = ?, reservationId = ? WHERE customerReservationId = ?`;
+  
+    querySelect = `SELECT customerReservationId, CONCAT(Customers.firstName, ' ', Customers.lastName) AS customer, reservationId FROM CustomerReservation JOIN Customers ON CustomerReservation.customerId = Customers.customerId WHERE CustomerReservationId = ?;`
+  
+          // Run the 1st query
+          db.pool.query(queryUpdate, [customerId, reservationId, id], function(error, rows, fields){
+              if (error) {
+  
+              // Log the error to the terminal so we know what went wrong, and send the visitor an HTTP response 400 indicating it was a bad request.
+              console.log(error);
+              res.sendStatus(400);
+              }
+  
+              // If there was no error, we run our second query and return that data so we can use it to update the record.
+              // table on the front-end
+              else
+              {
+                  // Run the second query
+                  db.pool.query(querySelect, [id], function(error, rows, fields) {
+          
+                      if (error) {
+                          console.log(error);
+                          res.sendStatus(400);
+                      } else {
+                          res.send(rows);
+                      }
+                  })
+              }
+  })
+}
+});
 
 app.put('/put-customer', function (req, res, next) {
     if (!req.session.authenticated) {
